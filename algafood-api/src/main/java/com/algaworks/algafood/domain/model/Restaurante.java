@@ -18,8 +18,8 @@ import lombok.EqualsAndHashCode;
 @Entity
 public class Restaurante {
 
-	@EqualsAndHashCode.Include
 	@Id
+	@EqualsAndHashCode.Include
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
@@ -29,7 +29,7 @@ public class Restaurante {
 	@Column(name = "taxa_frete", nullable = false)
 	private BigDecimal taxaFrete;
 	
-	@ManyToOne
+	@ManyToOne //ManyToOne é onde fica a tabela com chave estrangeira
 	@JoinColumn(name = "cozinha_id", nullable = false)
 	private Cozinha cozinha;
 	

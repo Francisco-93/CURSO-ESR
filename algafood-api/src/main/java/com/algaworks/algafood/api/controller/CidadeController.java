@@ -62,19 +62,15 @@ public class CidadeController {
 	}
 	
 	@PutMapping("/{cidadeId}")
-	public ResponseEntity<?> atualizar(@PathVariable Long cidadeId,
-			@RequestBody Cidade cidade) {
+	public ResponseEntity<?> atualizar(@PathVariable Long cidadeId, @RequestBody Cidade cidade) {
 		try {
-			// Podemos usar o orElse(null) também, que retorna a instância de cidade
-			// dentro do Optional, ou null, caso ele esteja vazio,
-			// mas nesse caso, temos a responsabilidade de tomar cuidado com NullPointerException
-			Cidade cidadeAtual = cidadeRepository.findById(cidadeId).orElse(null);
+			Optional<Cidade> cidadeAtual = cidadeRepository.findById(cidadeId);
 			
-			if (cidadeAtual != null) {
-				BeanUtils.copyProperties(cidade, cidadeAtual, "id");
+			if (cidadeAtual.isPresent()) {
+				BeanUtils.copyProperties(cidade, cidadeAtual.get(), "id");
 				
-				cidadeAtual = cadastroCidade.salvar(cidadeAtual);
-				return ResponseEntity.ok(cidadeAtual);
+				Cidade cidadeSalva = cadastroCidade.salvar(cidadeAtual.get());
+				return ResponseEntity.ok(cidadeSalva);
 			}
 			
 			return ResponseEntity.notFound().build();

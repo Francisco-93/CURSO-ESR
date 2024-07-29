@@ -1,5 +1,8 @@
 package com.algaworks.algafood.api.controller;
 
+import com.algaworks.algafood.domain.model.Restaurante;
+import com.algaworks.algafood.domain.repository.RestauranteRepository;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,15 +20,43 @@ public class TesteController {
 
 	@Autowired
 	private CozinhaRepository cozinhaRepository;
-	
+
+	@Autowired
+	private RestauranteRepository restauranteRepository;
+
 	@GetMapping("/cozinhas/por-nome")
 	public List<Cozinha> cozinhasPorNome(String nome) {
-		return cozinhaRepository.findTodasByNome(nome);
+		return cozinhaRepository.findTodasByNomeContaining(nome);
 	}
 	
 	@GetMapping("/cozinhas/unica-por-nome")
 	public Optional<Cozinha> cozinhaPorNome(String nome) {
 		return cozinhaRepository.findByNome(nome);
+	}
+
+	@GetMapping("/restaurantes/por-taxa-frete")
+	public List<Restaurante> restaurantesPorTaxaFrete(BigDecimal taxaInicial, BigDecimal taxaFinal) {
+		return restauranteRepository.findByTaxaFreteBetween(taxaInicial, taxaFinal);
+	}
+
+	@GetMapping("/restaurantes/por-nome")
+	public Optional<Restaurante> restaurantesPorTaxaFrete(String nome) {
+		return restauranteRepository.findFirstByNomeContaining(nome);
+	}
+
+	@GetMapping("/restaurantes/top/por-nome")
+	public List<Restaurante> restaurantesTop2(String nome) {
+		return restauranteRepository.findTop2ByNomeContaining(nome);
+	}
+
+	@GetMapping("/restaurantes/exists")
+	public boolean verificaNome(String nome) {
+		return restauranteRepository.existsByNome(nome);
+	}
+
+	@GetMapping("/restaurantes/count")
+	public Long contaRestaurantesPorCozinhaId(Long id) {
+		return restauranteRepository.countByCozinhaId(id);
 	}
 	
 }

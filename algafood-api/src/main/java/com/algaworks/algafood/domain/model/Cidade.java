@@ -16,16 +16,16 @@ import lombok.EqualsAndHashCode;
 @Entity
 public class Cidade {
 
-	@EqualsAndHashCode.Include
 	@Id
+	@EqualsAndHashCode.Include
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
 	@Column(nullable = false)
 	private String nome;
 	
-	@ManyToOne
-	@JoinColumn(nullable = false)
+	@ManyToOne //ManyToOne é onde fica a tabela com chave estrangeira
+	@JoinColumn(name = "estado_id",nullable = false)
 	private Estado estado;
 
 }

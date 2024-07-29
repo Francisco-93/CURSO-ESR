@@ -50,7 +50,7 @@ public class RestauranteController {
 		
 		return ResponseEntity.notFound().build();
 	}
-	
+
 	@PostMapping
 	public ResponseEntity<?> adicionar(@RequestBody Restaurante restaurante) {
 		try {
@@ -110,9 +110,7 @@ public class RestauranteController {
 			field.setAccessible(true);
 			
 			Object novoValor = ReflectionUtils.getField(field, restauranteOrigem);
-			
-//			System.out.println(nomePropriedade + " = " + valorPropriedade + " = " + novoValor);
-			
+
 			ReflectionUtils.setField(field, restauranteDestino, novoValor);
 		});
 	}
