@@ -1,4 +1,4 @@
-package com.algaworks.algafood.domain.repository;
+package com.algaworks.algafood.domain.repository.cozinha;
 
 import java.util.List;
 import java.util.Optional;

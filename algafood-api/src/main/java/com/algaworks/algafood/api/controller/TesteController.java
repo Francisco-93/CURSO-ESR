@@ -1,7 +1,7 @@
 package com.algaworks.algafood.api.controller;
 
 import com.algaworks.algafood.domain.model.Restaurante;
-import com.algaworks.algafood.domain.repository.RestauranteRepository;
+import com.algaworks.algafood.domain.repository.restaurante.RestauranteRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algaworks.algafood.domain.model.Cozinha;
-import com.algaworks.algafood.domain.repository.CozinhaRepository;
+import com.algaworks.algafood.domain.repository.cozinha.CozinhaRepository;
 
 @RestController
 @RequestMapping("/teste")
@@ -62,6 +62,11 @@ public class TesteController {
 	@GetMapping("/restaurantes/nome")
 	public List<Restaurante> porNome(String nome) {
 		return restauranteRepository.consultarPorNome(nome);
+	}
+
+	@GetMapping("/restaurantes/primeiro")
+	public Optional<Restaurante> restaurantePrimeiro() {
+		return restauranteRepository.buscarPrimeiro();
 	}
 	
 }

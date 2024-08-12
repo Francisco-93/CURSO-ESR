@@ -1,5 +1,6 @@
-package com.algaworks.algafood.domain.repository;
+package com.algaworks.algafood.domain.repository.restaurante;
 
+import com.algaworks.algafood.domain.repository.CustomJpaRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -10,10 +11,10 @@ import org.springframework.stereotype.Repository;
 import com.algaworks.algafood.domain.model.Restaurante;
 
 @Repository
-public interface RestauranteRepository extends JpaRepository<Restaurante, Long> {
+public interface RestauranteRepository extends CustomJpaRepository<Restaurante, Long> {
 
     //Resolvida com named query
-    @Query(name = "marciana")
+    @Query(name = "nomeDaQuery")
     List<Restaurante> consultarPorNome(String nome);
 
     List<Restaurante> findByTaxaFreteBetween(BigDecimal tacaInicial, BigDecimal taxaFinal);
@@ -26,6 +27,7 @@ public interface RestauranteRepository extends JpaRepository<Restaurante, Long> 
 
     Long countByCozinhaId(Long cozinhaId);
 
+    //A implementação dessa query está no RestauranteRepositoryImpl
     List<Restaurante> find(String nome, BigDecimal taxaFreteInicial, BigDecimal taxaFreteFinal);
 
 }

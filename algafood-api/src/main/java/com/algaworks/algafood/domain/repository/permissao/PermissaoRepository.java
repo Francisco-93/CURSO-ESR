@@ -1,4 +1,4 @@
-package com.algaworks.algafood.domain.repository;
+package com.algaworks.algafood.domain.repository.permissao;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
