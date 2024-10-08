@@ -9,6 +9,7 @@ import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -39,7 +40,7 @@ public class Restaurante {
 	@Column(name = "taxa_frete", nullable = false)
 	private BigDecimal taxaFrete;
 
-	@ManyToOne //ManyToOne é onde fica a tabela com chave estrangeira
+	@ManyToOne(fetch = FetchType.LAZY) //ManyToOne é onde fica a tabela com chave estrangeira
 	@JoinColumn(name = "cozinha_id", nullable = false)
 	private Cozinha cozinha;
 
@@ -47,7 +48,6 @@ public class Restaurante {
 	@Embedded
 	private Endereco endereco;
 
-	@JsonIgnore
 	@CreationTimestamp
 	@Column(nullable = false, columnDefinition = "datetime")
 	private LocalDateTime dataCadastro;
