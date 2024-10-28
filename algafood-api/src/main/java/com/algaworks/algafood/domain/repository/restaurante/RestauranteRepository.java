@@ -13,6 +13,9 @@ import com.algaworks.algafood.domain.model.Restaurante;
 @Repository
 public interface RestauranteRepository extends CustomJpaRepository<Restaurante, Long> {
 
+    @Query("from Restaurante r join r.cozinha join fetch r.formasPagamento")
+    List<Restaurante> findAll();
+
     //Resolvida com named query
     @Query(name = "nomeDaQuery")
     List<Restaurante> consultarPorNome(String nome);

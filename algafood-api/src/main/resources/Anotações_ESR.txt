@@ -1,0 +1,444 @@
+-------------------------------CURSO ESPECIALISTA SPRING REST-------------------------------
+
+2.24 -> Substituindo propriedades via linha de comando e variáveis de ambiente
+	É possível sobrescrever uma propriedade por linha de comando, mesmo que ela esteja estática no arquivo properties.
+	java -jar target/algafood-api-0.0.1-SNAPSHOT.jar --server.port=8082
+
+	Caso crie uma variável de ambiente no sistema operacional com o nome 'SERVER_PORT', automaticamente ela será usada e substituirá o valor do properties.
+	java -jar target/algafood-api-0.0.1-SNAPSHOT.jar
+
+2.26 -> Acessando propriedades com @ConfigurationProperties
+	É possível mapear propriedades do application-properties para atributos em uma classe Java. Essa é uma alternativa ao uso da anotação @Value().
+	Basta anotar a classe com a anotação @ConfigurationProperties("notificador.email") que ela vai olhar para todas as propriedades com esse prefixo.
+
+	notificador.email.host-servidor=smtp.algafood.com.br
+	notificador.email.porta-servidor=28
+
+	private String hostServidor;
+	private Integer portaServidor;
+
+	Repare que o nome da propriedade separado por '-' vai ser automaticamente mapeado para camelCase.
+
+3.14 -> Conhecendo e implementando o padrão Repository
+	Não se deve criar interface/classe de repository para objetos agregados. O repository deve ser somente do objeto root agregate.
+	Objetos agregados são aqueles que a sua existência está totalmente condicionado à existência do objeto root, por exemplo:
+	* Pessoa -> Carteira de habilitação
+	* Pedido -> Item pedido
+	* Produto -> Foto produto
+
+	Esses objetos agregados na notação UML recebem o símbolo de um diamante preenchido.
+
+	Outro detalhe importante é que não se deve fazer referência direta a esses objetos agregados, a referência deve ser feita para o bjeto root agregate.
+
+3.18 -> A anotação @JoinColumn
+	No exemplo de relacionamento entre as classes Cozinha e Restaurante, sabemos que uma Cozinha pode ter vários Restaurante e um Restaurante pode ter apenas uma Cozinha.
+	Dado essa explicação sabemos que esse é um relacionamento de 'Muitos-Para-Um'. Então nosso código fica assim:
+
+	public class Restaurante {
+	...
+		@ManyToOne
+		@JoinColumn(name = "cozinha_codigo")
+		private Cozinha cozinha
+	...
+	}
+
+	A anotação @JoinColumn serve para renomearmos a coluna de chave estrangeira que é gerada na tabela Restaurante.
+
+4.13 -> Implementando content negociation para retornar JSON ou XML
+		É possível fazer de maneira bem simples que a API retorne XML, basta apenas adicionar uma dependência no pom.xml:
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataform</groupId>
+			<artifactId>jackson-dataform-xml</artifactId>
+		</dependency>
+
+		Nenhuma outra configuração é necessária, basta apenas especificar o content-type na requisição HTTP e o retorno virá como XML.
+		É possível ainda receber em requisições POST o XML no body sem nenhuma configuração extra.
+
+4.15 -> Customizando as representações XML e JSON com @JsonIgnore, @JsonProperty e @JsonRootName
+		Podemos usar essas anotações para customizar a serealização do objeto.
+
+		@JsonRootName("gastronomia")
+		@Data
+		@Entity
+		public class Cozinha {
+
+			...
+
+			@JsonProperty("titulo")
+			@Column(nullable=false)
+			private String nome;
+
+			...
+		}
+
+5.1 -> Implementando consultas JPQL em repositórios
+		Podemos criar nossas próprias consultas personalizadas usando JPQL.
+		Podemos tanto usar com a anotação @Query como criar em qualquer classe que seja um componente Spring.
+		Para criarmos em qualquer classe, precisamos injetar o objeto EntityManager.
+
+		...
+
+		@Autowired
+		private EntityManager manager;
+
+		...
+
+5.6 -> Criando consultas com query methods
+		Já temos uma boa noção de como funcionam os query methods, segue documentação para detalhes:
+		https://docs.spring.io/spring-data/jpa/reference/jpa/query-methods.html
+		Só para deixar uma curiosidade aqui, ao escrever um método de query não é necessário ter o prefixo 'find'.
+		Em vez do nome do método ser 'findByName' pode ser somente 'name'. Por baixo dos panos são a mesma coisa.
+		Obviamente usar find é melhor pois segue boas práticas.
+		Lembrando que 'name' deve ser uma propriedade da entidade que estamos buscando.
+
+		@Repository
+		public interface CozinhaRepository extends JpaRepository<Cozinha, Long> {
+
+			List<Cozinha> nome(String nome);
+		}
+
+		@Repository
+		public interface CozinhaRepository extends JpaRepository<Cozinha, Long> {
+
+			List<Cozinha> findQualquerCoisaNome(String nome); //Ele também ignora palavras que não forem atributos
+		}
+
+5.7 -> Usando keywords para definir critérios de query methods
+		Containing ao final do método diz ao JPA que faça a busca com LIKE('%nome%')
+		List<Cozinha> findTodasByNomeContaining(String nome);
+
+		Between serve para filtrar no intervalo de valores ou datas:
+		List<Restaurante> findByTaxaFreteBetween(BigDecimal tacaInicial, BigDecimal taxaFinal);
+
+5.8 -> Conhecendo os prefixos de query methods
+		Além do prefixo find, temos também:
+		*find
+		*get
+		*read
+		*query
+		*stream
+		O comportamento não muda em nada, é somente um artifício para o nome do método ser mais semântico
+
+		Para buscar no banco somente o primeiro:
+		Optional<Restaurante> findFirstByNomeContaining(String nome);
+
+		Para buscar no banco os top 2, dada uma condição:
+		List<Restaurante> findTop2ByNomeContaining(String nome); //Pode ser qualquer número.
+
+		Verifica se existe um nome no banco de dados
+		boolean existsByNome(String nome);
+
+5.10 -> Externaizando consultas JPQL para um arquivo XML
+		Podemos externalizar as consultas, de forma que o código fique mais limpo e organizado.
+
+		//Resolvida com named query
+    	List<Restaurante> consultarPorNome(String nome);
+
+		É necessário criar uma pasta META-INF com um arquivo orm.xml dentro
+
+		<?xml version="1.0" encoding="UTF-8"?>
+		<entity-mappings
+			xmlns="http://xmlns.jcp.org/xml/ns/persistence/orm"
+			xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/orm_2_2.xsd"
+			version="2.2">
+
+			<named-query name="Restaurante.consultarPrNome">  <!-- Nome da entidade . nome do método -->
+				<query>
+					select r from Restaurante r
+					where r.nome like concat('%', :nome, '%')
+				</query>
+			</named-query>
+
+		</entity-mappings>
+
+		Caso queira colocar um nome diferente, você também pode. Basta inserir a anotação @Query no método abstrato e indicar qual a namedQuery:
+
+		@Query(name = "nome_qualquer")
+    	List<Restaurante> consultarPorNome(String nome);
+
+5.11 -> Implementando um repositório SDJ customizado
+		Dado que temos uma interface que extende de JpaRepository:
+
+		@Repository
+		public interface RestauranteRepository extends JpaRepository<Restaurante, Long> {}
+
+		Podemos criar uma implementação customizada para fazer queries com lógicas diferenciadas (com if, for) com EntityManager. Basta criar uma classe com o mesmo nome da interface,
+		com o pós-fixo Impl. RestauranteRepository -> RestauranteRepositoryImpl
+
+		@Repository
+		public class RestauranteRepositoryImpl {
+
+			@PersistenceContext
+			private EntityManager entityManager;
+
+			public List<Restaurante> find(String nome, BigDecimal taxaFreteInicial, BigDecimal taxaFreteFinal) {
+				var jpql = "from Restaurante where nome like :nome"
+				+ " and taxaFrete between :taxaFreteInicial and :taxaFreteFinal";
+
+				List<Restaurante> resultList = entityManager.createQuery(jpql, Restaurante.class)
+					.setParameter("nome", "%" + nome + "%")
+					.setParameter("taxaFreteInicial", taxaFreteInicial)
+					.setParameter("taxaFreteFinal", taxaFreteFinal)
+					.getResultList();
+
+				return resultList;
+			}
+		}
+
+		Basta adicionarmos a assinatura do método em nossa interface, que o Spring Data vai conseguir achar essa implementação. Isso é bom pois não precisamos injetar a classe de
+		implementação em nossos serviços.
+
+		@Repository
+		public interface RestauranteRepository extends JpaRepository<Restaurante, Long> {
+
+			List<Restaurante> find(String nome, BigDecimal taxaFreteInicial, BigDecimal taxaFreteFinal);
+
+		}
+
+5.13 -> Implementando uma consulta simples com Criteria API
+		Como obter um CriteriaQuery?
+
+		* Injetar o EntityManager
+		* Com o EntityManager chamar: manager.getCriteriaBuilder();
+		* Através do CriteriaBuilder você já pode montar a sua Query
+
+		public List<Restaurante> find(String nome, BigDecimal taxaFreteInicial, BigDecimal taxaFreteFinal) {
+			CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+			CriteriaQuery<Restaurante> criteria = criteriaBuilder.createQuery(Restaurante.class);
+			criteria.from(Restaurante.class);
+
+			TypedQuery<Restaurante> query = entityManager.createQuery(criteria);
+			return query.getResultList();
+    	}
+
+5.14 -> Implementando cláusulas where com Criteria API
+
+		public List<Restaurante> find(String nome, BigDecimal taxaFreteInicial, BigDecimal taxaFreteFinal) {
+			CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+			CriteriaQuery<Restaurante> criteria = criteriaBuilder.createQuery(Restaurante.class);
+			Root<Restaurante> from = criteria.from(Restaurante.class);
+
+			Predicate nomePredicate = criteriaBuilder.like(from.get("nome"), "%"+nome+"%");
+			Predicate taxaInicialpredicate = criteriaBuilder.greaterThanOrEqualTo(from.get("taxaFrete"), taxaFreteInicial);
+			Predicate taxaFinalpredicate = criteriaBuilder.lessThanOrEqualTo(from.get("taxaFrete"), taxaFreteFinal);
+
+			criteria.where(nomePredicate, taxaInicialpredicate, taxaFinalpredicate);
+
+			TypedQuery<Restaurante> query = entityManager.createQuery(criteria);
+			return query.getResultList();
+    	}
+
+5.17 -> Implementando specifications cm SDJ
+		Existe uma forma diferente de fazer consultas com JPA, essa forma é a Specification.
+		Não vou detalhar, pois não é muito utilizada. Para reembrar assista essa aula.
+
+5.20 -> Estendendo o JpaRepository para customizar repositório base
+		Podemos criar implementações de repositório base usando generics. Segue um exemplo:
+
+		@NoRepositoryBean
+		public interface CustomJpaRepository<T, ID> extends JpaRepository<T, ID> {
+
+    		Optional<T> buscarPrimeiro();
+		}
+
+		Repare que estendemos de JpaRepository e herdamos todos aqueles métodos básicos e ainda inserimos mais um!
+		Agora precisamos de uma classe que implemente essa interface:
+
+		public class CustomJpaRepositoryImpl<T, ID> extends SimpleJpaRepository<T, ID> implements CustomJpaRepository<T, ID> {
+
+			private EntityManager entityManager;
+
+			public CustomJpaRepositoryImpl(JpaEntityInformation<T, ?> entityInformation, EntityManager entityManager) {
+				super(entityInformation, entityManager);
+				this.entityManager = entityManager;
+			}
+
+
+			@Override
+			public Optional<T> buscarPrimeiro() {
+				var jpql = "from " + getDomainClass().getName();
+				T singleResult = entityManager.createQuery(jpql, getDomainClass()).setMaxResults(1).getSingleResult();
+				return Optional.ofNullable(singleResult);
+			}
+		}
+
+		Repare que além de implementar a nossa interface JPA ela também estende toda a implementação padrão de JpaRepository com a classe
+		SimpleJpaRepository. Assim, nós precisaremos implementar somente o nosso método.
+		Tendo feito isso podemos substituir em nossos repositórios a velha JpaRepository<T, ID> por CustomJpaRepository<T, ID>.
+		Além disso precisamos dizer ao spring que temos uma nova classe de implementação JPA, na classe main:
+
+		@SpringBootApplication
+		@EnableJpaRepositories(repositoryBaseClass = CustomJpaRepositoryImpl.class)
+		public class AlgafoodApiApplication {
+			...
+6.1 ->  Mapeando relacionamento bidirecional com @OneToMany
+		Nem sempre em um relacionamento de (um para muitos) ou de (muitos para um) é necessário termos acesso bidirecional em nosso código java.
+		Isso vai depender de nossa regra de negócio. O ideal é não ter, pois isso pode gerar uma complexidade maior, pois na hora que o hibernate
+		carrega as entidades, ele irá fazer 'JOIN' para trazer os dados relacionados.
+
+		@Entity
+		public class Restaurante {
+
+			@ManyToOne //ManyToOne é onde fica a tabela com chave estrangeira
+			@JoinColumn(name = "cozinha_id", nullable = false)
+			private Cozinha cozinha;
+		}
+
+		@Entity
+		public class Cozinha {
+
+			...
+
+			@JsonIgnore	//Aqui o relacionamento é opcional. Faça somente se a sua lógica de negócio precisar mesmo.
+			@OneToMany(mappedBy = "cozinha") //A lista é sempre do lado que termina com 'Many'
+			private List<Restaurante> restaurantes = new ArrayList<>();
+
+		}
+
+
+6.2 ->  Mapeando relacionamento muitos-para-muitos com @ManyToMany
+		Relacionamentos muitos para muitos precisam de uma tabela de associação, vejamos como fica a implementação:
+
+		@Entity
+		public class Restaurante {
+
+			...
+
+			@ManyToMany
+			@JoinTable(
+				name = "restaurante_forma_pagamento",
+				joinColumns = {@JoinColumn(name = "restaurante_id")},
+				inverseJoinColumns = {@JoinColumn(name = "forma_pagamento_id")}
+			)
+			private List<FormaPagamento> formasPagamento = new ArrayList<>();
+
+		}
+
+6.4 ->  Mapeando classes incorporáveis com @Embedded e @Embeddable
+		Podemos criar classes separadas e incorporá-las dentro de nossa entidade.
+		No curso a classe Endereço é uma classe que pode ser embutida dentro das entidades.
+		Para isso, usamos as anotações @Embedded e @Embeddable.
+
+		@Embeddable -> vai na classe embutível
+		@Embedded -> vai no atributo de classe que será embutido
+
+6.6 ->  Mapeando propriedades com @CreationTimestamp e @UpdateTimestamp
+		É uma aotação do hibernate que permite marcar o momento em que um objeto é criado ou atualizado.
+		Salva com data e local UTC.
+		Usamos ela da seguinte forma:
+
+	...
+		@CreationTimestamp
+		@Column(nullable = false)
+		private LocalDateTime dataCadastro;
+
+		@UpdateTimestamp
+		@Column(nullable = false)
+		private LocalDateTime dataAtualizacao;
+	...
+
+		Poedemos passar na anotação @Column a definição do datatype da coluna, para não representar milissegundos.
+
+		@Column(nullable = false, columnDefinition = "datetime")
+
+6.10 -> Entendendo o Eager Loading
+		É importante saber os seguintes pontos:
+
+		* @ManyToOne -> padrão é ser EAGER
+		* @OneToMany -> padrão é ser LAZY
+
+		Podemos deduzir que se a anotação termina com 'ToOne' o padrão dela será EAGER, e caso temrine com 'toMany' o padrão será LAZY,
+		por causa da lista seria necessário múltiplos JOINS.
+
+		Então mesmo com a estratégia EAGER como padrão em @ManyToOne pode ser ruim, vai depender da sua regra de negócio.
+		Verifique se o dado realmente é necessário na representação JSON do objeto, pois podem ser gerados múltiplas consultas ao banco
+		de dados para obter esses objetos associados.
+
+6.11 -> Entendendo o Lazy Loading
+		Quando o JPA recupera o objeto do banco de dados, ele não traz junto os objetos associados, ele é preguiçoso. Isso se deve ao fato de o JPA
+		procurar ter uma performance melhorada, mas tem um detahe importante.
+
+		O JPA quando em Lazy Loading, ele irá trazer dados sob demanda, ou seja, somente quando precisar.
+
+		Quando você solicita o dado associado, rapidamente o JPA vai ao banco e traz esse dado associado. Por baixo dos panos, ele faz um segundo select bem rápido
+		para trazer esse dado associado.
+
+		Não se engane achando que obrigatoriamente vai ocorrer uma LazyInicializationException porque não vai. LazyInicializationException é uma exceção
+		que ocorre nesse mesmo cenário, mas quando estamos usando transação, e caso a transação já esteja fechada, o JPA não vai conseguir buscar o objeto
+		associado e então irá dar esse erro.
+
+		Outro conceito importante é que no momento em que você chama o objeto associado, exemplo:
+
+		restaurante.getCozinha().getNome();
+
+		Logicamente poderíamos pensar que ele estaria nulo e por ventura lançaria uma NullPointerException, mas não! O JPA vai instancia a Cozinha com um PROXY temporariamente
+		até que o bjeto real seja alocdo.
+
+6.14 -> Resolvendo o problema N+1 com fetch join usando JPQL
+
+		Vimos que quando chamamos um Restaurante o JPA faz um select também para a Cozinha associada ao Restaurante, isso é um problema, pois se fizermos um findAll de uma tabela
+		com 5 mil Restaurantes, também será feita mais 5 mil consultas para trazer a Cozinha associada.
+
+		Nós podemos resolver esse problema escrevendo nosso próprio método findAll() sobrescrevendo o comportamento padrão do JPA.
+
+	...
+
+		@Query("from Restaurante r join r.cozinha")
+		List<Restaurente> findAll();
+
+	...
+
+	E se quisermos também trazer as formas de pagamento em uma única consulta?
+
+	...
+		@Query("from Restaurante r join r.cozinha join fetch r.formasPagamento")
+	    List<Restaurante> findAll();
+    ...
+
+    Perceba que usamos o JOIN FETCH pois estamos buscando de uma coleção que por padrão é LAZY, por esse motivo temos que especificar para trazer tudo na consulta com JOIN FETCH.
+
+7.6 -> Adicionando o Flyway no projeto e criando a primeira migração
+
+		O primeiro ponto quando vamos implementar uma migration em nosso projeto é não permitir que o JPA faça o DDL-AUTO (drop e create de tabelas).
+		Para utilizar o Flyway, precisamos adicionar uma dependência em nosso projeto:
+
+		...
+		<dependency>
+	      <groupId>org.flywaydb</groupId>
+	      <artifactId>flyway-core</artifactId>
+	    </dependency>
+	    ...
+
+	    Se tentarmos rodar após a inclusão da dependência, ele irá procurar scripts de migration em uma pasta 'db/migration'. Se ela não existir, devemos criá-la e inserir os
+	    arquivos de migration lá dentro. No curso o instrutor está fazendo esses arquivos no formato SQL mesmo, porém pode ter outros formatos.
+
+7.8 -> Criando migrações complexas com remanejamento de dados
+
+		Imagine que temos uma tabela CIDADE que contem o nome do estado ao qual aquela cidade pertence, porém no desenrolar do nosso projeto, resolvemos migrar essa coluna 'nome_estado'
+		para uma tabela ESTADO. Então pense em um ambiente de Produção, temo que achar uma estratégia de migração que não afete os dados já persistidos.
+
+		* Criamos a tabela ESTADO
+		* Populamos a tabela ESTADO com o comando:
+			'insert into estado (nome) select distinct nome_estado from cidade;'
+		* Criamos uma coluna 'estado_id' em CIDADE
+		* Populamos a coluna 'estado_id' relacionando pelo nome do estado
+		* Criamos uma constraint para foreign key
+		* Deletamos a coluna 'estado_nome' de CIDADE
+		* Renomeamos a coluna 'cidade_nome' para 'nome' em CIDADE
+
+		Para ver os scripts vá até o arquivo V003__cria-tabela-estado.sql
+
+7.9 -> Criando migração a partir de DDL gerado por schema generation
+
+		Com as opções inseridas no application.properties conseguimos fazer com que o hibernate gere os scripts SQL do nosso mapeamento ORM:
+
+			#Só gera os scripts, mas não executa
+			#spring.jpa.properties.javax.persistence.schema-generation.scripts.action=create
+			#Em qual localização ele vai guardar os scripts gerados
+			#spring.jpa.properties.javax.persistence.schema-generation.scripts.create-target=src/main/resources/ddl.sql
+
+		O hibernate não vai executar os comandos, ele irá apenas gerar o SQL e salvar ele dentro de um arquivo indicado pelo segundo comado.
+		Isso foi muito útil para criarmos um script de migração que vai criar todas as tableas de nosso mapeamento.
+		É uma boa prática revisar o conteúdo gerado e não só simplesmente copiar e colar na migration.

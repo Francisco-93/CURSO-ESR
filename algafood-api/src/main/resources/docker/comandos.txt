@@ -1,0 +1,2 @@
+-- Comando para subir o banco:
+docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=123 -e MYSQL_DATABASE=algafood -p 3306:3306 -d mysql:latest
